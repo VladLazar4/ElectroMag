@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRO-MAG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>ELECTRO-MAG</h1>
+    </header>
+
+    <div class="ribbon">
+        <a href="#" onclick="renderUserList()"><i class="fas fa-users"></i>Clients</a>
+        <a href="#" onclick="renderProductList()"><i class="fas fa-cogs"></i>Products</a>
+        <a href="#" onclick="showSection('chat')"><i class="fas fa-comments"></i>Chat</a>
+        <a href="#account-details" onclick="accountDetails()"><i class="fas fa-user"></i>Account</a>
+    </div>
+
+    <section id="clients" style="display: none;">
+        <h2>Clients</h2>
+        <ul id="userList"></ul>
+    </section>
+
+    <section id="products" style="display: none;">
+        <h2>Products</h2>
+        <ul id="productList"></ul>
+    </section>
+
+    <section id="chat" style="display: none;">
+        <h2>Chat</h2>
+        <div id="userListForChat"></div>
+        <label for="selectUser">Select User:</label>
+        <select id="selectUser" onchange="selectUserForChat()">
+            <option value="" disabled selected>Select a user</option>
+        </select>
+        <textarea id="messageInput" placeholder="Type your message..." style="width: 80%;"></textarea>
+        <button onclick="sendMessage()">Send</button>
+        <div id="chatMessages"></div>
+    </section>
+
+    <section id="account-details" style="display: none;">
+        <h2>Account details</h2>
+    </section>
+
+    <script>
+        userName = localStorage.getItem("username");
+        userPass = localStorage.getItem("password");
+        userType = localStorage.getItem("userType");
+
+        // const productList = [
+        //     { id: 1, name: 'Product 1' },
+        //     { id: 2, name: 'Product 2' },
+        //     { id: 3, name: 'Product 3' },
+        // ];
+
+        // const userList = [
+        //     { id: 101, username: 'user1' },
+        //     { id: 102, username: 'user2' },
+        //     { id: 103, username: 'user3' },
+        // ];
+
+        let userList = [];
+        fetch('JSONs/user.json')
+            .then(response => response.json())
+            .then(data => {
+                userList = data;
+                // console.log(userList);
+
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        let productList = [];
+        fetch('JSONs/products.json')
+            .then(response => response.json())
+            .then(data => {
+                productList = data;
+                // console.log(productList);
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        let chatList = [];
+        fetch('JSONs/chat.json')
+            .then(response => response.json())
+            .then(data => {
+                chatList = data;
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        function renderProductList() {
+
+            const productListElement = document.getElementById('productList');
+            productListElement.innerHTML = '';
+            productList.forEach(product => {
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = product.id;
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'text';
+                reasonInput.placeholder = 'Reason for deletion';
+
+                li.appendChild(checkbox);
+                li.appendChild(document.createTextNode(` ${product.name}`));
+                li.appendChild(reasonInput);
+                productListElement.appendChild(li);
+            });
+
+            const renderList = document.createElement('button');
+            renderList.id = 'style-button';
+            renderList.textContent = 'Delete products';
+            renderList.onclick = deleteSelectedProducts;
+            productListElement.appendChild(renderList);
+
+            showSection('products');
+        }
+
+        function renderUserList() {
+            const userListElement = document.getElementById('userList');
+            userListElement.innerHTML = '';
+
+            userList.forEach(user => {
+                const li = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = user.username;
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'text';
+                reasonInput.placeholder = 'Reason for deletion';
+
+                li.appendChild(checkbox);
+                li.appendChild(document.createTextNode(` ${user.username}`));
+                li.appendChild(reasonInput);
+                userListElement.appendChild(li);
+            });
+
+            const renderList = document.createElement('button');
+            renderList.id = 'style-button';
+            renderList.textContent = 'Delete users';
+            renderList.onclick = deleteSelectedUsers;
+            userListElement.appendChild(renderList);
+
+            showSection('clients');
+        }
+
+        function deleteSelectedProducts() {
+            const productListElement = document.getElementById('productList');
+            const checkboxes = productListElement.querySelectorAll('input[type="checkbox"]:checked');
+            const reasons = productListElement.querySelectorAll('input[type="text"]');
+
+            const selectedProductIds = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+            if (selectedProductIds.length === 0) {
+                alert('Please select at least one product to delete.');
+                return;
+            }
+
+            const confirmDeletion = confirm('Are you sure you want to delete the selected products?');
+
+            if (confirmDeletion) {
+                selectedProductIds.forEach(productId => {
+                    const productIndex = productList.findIndex(product => product.id === parseInt(productId));
+
+                    if (productIndex !== -1) {
+                        productList.splice(productIndex, 1);
+                    }
+                });
+
+                renderProductList();
+            }
+        }
+
+        function deleteSelectedUsers() {
+            const userListElement = document.getElementById('userList');
+            const checkboxes = userListElement.querySelectorAll('input[type="checkbox"]:checked');
+            const reasons = userListElement.querySelectorAll('input[type="text"]');
+
+            const selectedUserIds = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+            if (selectedUserIds.length === 0) {
+                alert('Please select at least one user to delete.');
+                return;
+            }
+
+            const confirmDeletion = confirm('Are you sure you want to delete the selected users?');
+            if (confirmDeletion) {
+                selectedUserIds.forEach(userId => {
+                    const userIndex = userList.findIndex(user => user.username === userId);
+
+                    if (userIndex !== -1) {
+                        userList.splice(userIndex, 1);
+                    }
+                });
+
+                renderUserList();
+            }
+        }
+
+        function renderUserListForChat() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            selectUserDropdown.innerHTML = '<option value="" disabled selected>Select a user</option>';
+
+            userList.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.username;
+                option.textContent = user.username;
+                selectUserDropdown.appendChild(option);
+            });
+        }
+
+        function selectUserForChat() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            const selectedUserUsername = selectUserDropdown.value;
+
+            if (userList && selectedUserUsername) {
+                selectedChatUser = userList.find(user => user.username === selectedUserUsername);
+
+                if (selectedChatUser) {
+                    renderChatMessages(userName, selectedUserUsername);
+                } else {
+                    console.error('Selected user not found in userList.');
+                }
+            } else {
+                console.error('userList or selectedUserId is not properly initialized.');
+            }
+        }
+
+        function findConversation(user1_2, user2_2) {
+            const flatChatList = chatList.flat();
+
+            const conversation = flatChatList.filter(message =>
+                (message.user1 === user1_2 && message.user2 === user2_2) ||
+                (message.user1 === user2_2 && message.user2 === user1_2)
+            );
+
+            finalChat = "";
+            conversation.forEach(message => {
+                if(message.user1 === user1_2){
+                    finalChat +=("me: "+message.message+"<br>");
+                } else{
+                    finalChat += user2_2+": "+message.message+"<br>";
+                }
+            });
+            return finalChat;
+        }
+
+        function renderChatMessages(user1, user2) {
+
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML='';
+
+            const storedConversation = findConversation(user1, user2);
+
+            if (storedConversation) {
+                chatMessages.innerHTML = storedConversation;
+            }
+        }
+
+
+        function sendMessage() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            const selectedUserId = selectUserDropdown.value;
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            newMessage = {id : null, user1 : userName, user2 : selectedUserId, message : messageText};
+            chatList.push(newMessage);
+            renderChatMessages(userName, selectedUserId);
+            messageInput.value = '';
+        }
+
+        function accountDetails() {
+            const accountDetailsSection = document.getElementById('account-details');
+            accountDetailsSection.innerHTML = `
+                <h2>Account Details</h2>
+                <p>Username: ${userName}</p>
+                <button type="button" onclick="logOut()" id="style-button">Logout</button>
+                <h3>If you want to change your password</h3>
+                <label for="oldPassword">Old Password:</label>
+                <input type="password" id="oldPassword" placeholder="Enter old password">
+                <p></p>
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" placeholder="Enter new password">
+                <p></p>
+                <button type="button" onclick="changePassword()" id="style-button">Change password</button>
+            `;
+
+            showSection('account-details');
+        }
+
+        function logOut(){
+            document.location.href = "index.html";
+        }
+
+        function changePassword() {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            if(oldPassword == userPass){
+                alert(`Password changed successfully!\nOld Password: ${oldPassword}\nNew Password: ${newPassword}`);
+            } else{
+                alert(`Old pass is wrong`);
+            }
+        }
+
+        function showSection(sectionId) {
+            const sections = ['clients', 'products', 'chat', 'account-details'];
+            sections.forEach(section => {
+                const element = document.getElementById(section);
+                if (section === sectionId) {
+                    if(section=='chat'){
+                        renderUserListForChat();
+                    }
+                    element.style.display = 'block';
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+        }
+
+        renderProductList();
+        renderUserList();
+        renderUserListForChat();
+        document.querySelector('a[href="#account-details"]').addEventListener('click', viewAccountDetails);
+    </script>
+
+</body>
+</html>

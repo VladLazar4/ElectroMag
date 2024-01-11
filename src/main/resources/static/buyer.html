@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRO-MAG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>ELECTRO-MAG</h1>
+    </header>
+
+    <div class="ribbon">
+        <div class="ribbon-search">
+            <input type="text" id="search-bar" placeholder="Search..." oninput="applyFilters()">
+            <select id="category-dropdown" onchange="applyFilters()">
+                <option value="all">All</option>
+                <option value="TV">TVs</option>
+                <option value="phone">Mobile phones</option>
+                <option value="laptop">Laptops</option>
+            </select>
+        </div>
+        <a href="#home" onclick="showSection('home')"><i class="fas fa-home"></i>Home</a>
+        <a href="#products" onclick="showSection('products')"><i class="fas fa-box"></i>Products</a>
+        <a href="#cart" onclick="showSection('cart')"><i class="fas fa-shopping-cart"></i>Cart</a>
+        <a href="#chat" onclick="showSection('chat')"><i class="fas fa-comments"></i>Chat</a>
+        <a href="#account-details" onclick="showSection('account-details')"><i class="fas fa-user"></i>Account</a>
+        <a href="#new-product" onclick="showSection('new-product')"><i class="fas fa-plus"></i>Sell product</a>
+    </div>
+
+    <section id="home">
+        <h2>Welcome to ELECTRO-MAG!</h2>
+        <p>Discover amazing products and enjoy a seamless shopping experience.</p>
+    </section>
+
+
+    <section id="products" class="horizontal-display" style="display: none;">
+        <h2>Our products</h2>
+        <p>No products found.</p>
+    </section>
+    
+    <section id="product-details" style="display: none;">
+    </section>
+    
+    <section id="cart" style="display: none;">
+        <h2>Your cart</h2>
+        <ul id="cart-items"></ul>
+        <div id="total-section"></div>
+    </section>
+
+    <section id="chat" style="display: none;">
+        <h2>Chat</h2>
+        <div id="adminsListForChat"></div>
+        <label for="selectUser">Select Admin:</label>
+        <select id="selectUser" onchange="selectUserForChat()">
+            <option value="" disabled selected>Select an admin</option>
+        </select>
+        <textarea id="messageInput" placeholder="Type your message..." style="width: 80%;"></textarea>
+        <button onclick="sendMessage()">Send</button>
+        <div id="chatMessages"></div>
+    </section>
+    
+    <section id="account-details" style="display: none;">
+        <h2>Account details</h2>
+    </section>
+
+    <section id="new-product" style="display: none;">
+        <h2>Add new product</h2>
+
+        <form action="#" method="post">
+            <label for="category">Category:</label>
+            <select id="category" name="category">
+                <option value="tv">TV</option>
+                <option value="laptop">Laptop</option>
+                <option value="mobile-phone">Mobile Phone</option>
+            </select>
+
+            <br>
+
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <br>
+
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" min="0" step="0.01" required>
+
+            <br>
+
+            <label for="stock">Stock:</label>
+            <input type="number" id="stock" name="stock" min="0" step="1" required>
+
+            <br>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4" cols="50" required></textarea>
+
+            <br>
+
+            <button onclick="addNewProduct()" id="style-button">Add product</button>
+        </form>
+    </section>
+    
+
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            <p>Product added to cart!</p>
+        </div>
+    </div>
+
+    <div id="not-enough-stock-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeNotEnoughStockPopup()">&times;</span>
+            <p>Not enough stock!</p>
+        </div>
+    </div>
+
+    <div id="place-order-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePlaceOrderPopup()">&times;</span>
+            <p>Your order has been placed!</p>
+            <button onclick="generateReceipt()">Generate Receipt</button>
+        </div>
+    </div>
+
+    <div id="report-product-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeReportProcuctPopup()">&times;</span>
+            <p>The product has been reported!</p>
+        </div>
+    </div>
+
+    <script>
+        userName = localStorage.getItem("username");
+        userPass = localStorage.getItem("password");
+        userType = localStorage.getItem("userType");
+        let conversation = 'conversation';
+        // users = [
+        //     { name: 'user1', username: '1', password: '1', type: 'admin' },
+        //     { name: 'user2', username: '2', password: '2', type: 'buyer' },
+        //     { name: 'user3', username: '3', password: '3', type: 'seller' },
+        //
+        // ];
+        //
+        // const productsData = [
+        //     { id: 1, category: "TV", name: 'Samsung TV', price: 2000, description: 'Lorem ipsum dolor sit amet.', stock: 5, postedBy: "A" },
+        //     { id: 2, category: "TV", name: 'LG TV', price: 1800, description: 'Consectetur adipiscing elit.',  stock: 5, postedBy: "B" },
+        //     { id: 3, category: "TV", name: 'Philips TV', price: 2500, description: 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',  stock: 5, postedBy: "C" },
+        // ];
+
+        let userList = [];
+        fetch('JSONs/user.json')
+            .then(response => response.json())
+            .then(data => {
+                userList = data;
+                // console.log(userList);
+
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        let productList = [];
+        fetch('JSONs/products.json')
+            .then(response => response.json())
+            .then(data => {
+                productList = data;
+                // console.log(productList);
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        let chatList = [];
+        fetch('JSONs/chat.json')
+            .then(response => response.json())
+            .then(data => {
+                chatList = data;
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        const cartData = [];
+        // const adminList = users.filter(user => user.type === 'admin');
+
+        function renderProducts() {
+            const element = document.getElementById('products');
+            if (element.style.display !== "none") {
+                const productsSection = document.getElementById('products');
+                productsSection.innerHTML = '';
+
+                const searchBar = document.getElementById('search-bar');
+                const categoryDropdown = document.getElementById('category-dropdown');
+
+                const searchValue = searchBar.value.toLowerCase();
+                const selectedCategory = categoryDropdown.value.toLowerCase();
+
+                const filteredProducts = productList.filter(product => {
+                    const nameMatch = product.name.toLowerCase().includes(searchValue);
+                    const categoryMatch = selectedCategory === 'all' || product.category.toLowerCase() === selectedCategory;
+                    const enoughStock = product.stock > 0;
+
+                    return nameMatch && categoryMatch && enoughStock;
+                });
+
+                if (filteredProducts.length === 0) {
+                    productsSection.innerHTML = '<h2>Our products</h2><p>No products found.</p>';
+                } else {
+                    productsSection.innerHTML = '<h2>Our products</h2>';
+                    filteredProducts.forEach(product => {
+                        const productElement = document.createElement('div');
+                        productElement.classList.add('product');
+                        productElement.innerHTML = `
+                    <img src="img/product_${product.id}.jpg" alt="${product.name}" class="product-image">
+                    <h3>${product.name}</h3>
+                    <p>$${product.price}</p>
+                    <button onclick="viewProductDetails(${product.id})">View Details</button>
+                `;
+                        productsSection.appendChild(productElement);
+                    });
+                }
+                showSection('products');
+                productsSection.classList.add('horizontal-display');
+            }
+        }
+
+        function applyFilters(){
+            renderProducts();
+        }
+
+        function renderProductDetails(productId) {
+            const product = productList.find(item => item.id === productId);
+            if (product) {
+                const productDetailsSection = document.getElementById('product-details');
+                productDetailsSection.innerHTML = `
+                    <img src="img/product_${product.id}.jpg" alt="${product.name}" class="product-image-details">
+                    <h2>${product.name}</h2>
+                    <p>${product.description}</p>
+                    <p>$${product.price}</p>
+                    <p>Posted by ${product.postedBy}</p>
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" value="1" min="1">
+                    <button type="button" onclick="addToCart(${product.id}, document.getElementById('quantity').value)">Add to Cart</button>
+                    <p></p>
+                    <button type="button" onclick="reportProduct(${product.id})">Report product</button>
+                `;
+
+                showSection('product-details');
+            }
+        }
+
+        function addToCart(productId, quantity) {
+            const product = productList.find(item => item.id === productId);
+            if (product) {
+                if (product.stock>=quantity){
+                    productList.find(item => item.id === productId).stock-=quantity;
+                    const existingCartItem = cartData.find(item => item.id === productId);
+
+                    if (existingCartItem) {
+                        existingCartItem.quantity += parseInt(quantity, 10);
+                    } else {
+                        cartData.push({ ...product, quantity: parseInt(quantity, 10) });
+                    }
+                    renderCart();
+                    renderProducts();
+                    showPopup();
+                } else{
+                    showNotEnoughStockPopup();
+                }
+            }
+        }
+
+        function renderCart() {
+            const cartList = document.getElementById('cart-items');
+            const totalSection = document.getElementById('total-section');
+
+            if (cartData.length === 0) {
+                cartList.innerHTML = '<p>Your cart is empty.</p>';
+                totalSection.innerHTML = '';
+            } else {
+                cartList.innerHTML = '';
+
+                cartData.forEach(item => {
+                    const cartItem = document.createElement('li');
+                    cartItem.textContent = `${item.name} - $${item.price} - Quantity: ${item.quantity}`;
+                    cartList.appendChild(cartItem);
+                });
+
+                const totalPrice = cartData.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+                totalSection.innerHTML = `<p>Total: $${totalPrice}</p>`;
+
+                const placeOrderButton = document.createElement('button');
+                placeOrderButton.id = 'place-order-button';
+                placeOrderButton.textContent = 'Place Order';
+                placeOrderButton.onclick = placeOrder;
+                totalSection.appendChild(placeOrderButton);
+            }
+
+            showSection('cart');
+        }
+
+        function reportProduct(productID){
+            productList.find(item => item.id === productID).stock=0;
+            renderProducts();
+            showReportProductPopup();
+        }
+
+        function showSection(sectionId) {
+            const sections = ['home', 'products', 'product-details', 'cart', 'chat', 'account-details', 'new-product'];
+            sections.forEach(section => {
+                const element = document.getElementById(section);
+                console.log(sectionId);
+                if (section === sectionId) {
+                    if(section=='chat'){
+                        renderUserListForChat();
+                    }
+                    if(section === 'new-product'){
+                        if(userType === "seller"){
+                            element.style.display = 'block';
+                        } else{
+                            window.alert("You need to be a seller to enter this window");
+                            document.getElementById('home').style.display = 'block';
+                        }
+                    } else{
+                        element.style.display = 'block';
+                    }
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+        }
+
+        function placeOrder(){
+            renderProducts();
+            showPlaceOrderPopup();
+        }
+
+        function generateReceipt() {
+            const {jsPDF} = window.jspdf;
+            const doc = new jsPDF();
+
+            const receiptContent = generateReceiptText(cartData);
+
+            cartData.splice(0,cartData.length);
+            renderCart();
+
+            doc.setFontSize(12);
+            doc.text(100, 20, "Reciept");
+            doc.text(30, 50, receiptContent);
+
+            doc.save('receipt.pdf');
+        }
+
+        function generateReceiptText(items) {
+            let receiptText = '';
+
+            items.forEach((item, index) => {
+                receiptText += `${index + 1}. ${item.name} - $${item.price} - Quantity: ${item.quantity}\n`;
+            });
+
+            const total = items.reduce((sum, item) => sum + item.price*item.quantity, 0);
+            receiptText += `\n\tTotal: $${total.toFixed(2)}`;
+
+            return receiptText;
+        }
+
+        function viewProductDetails(productId) {
+            renderProductDetails(productId);
+        }
+
+        function renderUserListForChat() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            selectUserDropdown.innerHTML = '<option value="" disabled selected>Select a user</option>';
+
+            userList.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.username;
+                option.textContent = user.username;
+                selectUserDropdown.appendChild(option);
+            });
+        }
+
+        function selectUserForChat() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            const selectedUserUsername = selectUserDropdown.value;
+
+            if (userList && selectedUserUsername) {
+                selectedChatUser = userList.find(user => user.username === selectedUserUsername);
+
+                if (selectedChatUser) {
+                    renderChatMessages(userName, selectedUserUsername);
+                } else {
+                    console.error('Selected user not found in userList.');
+                }
+            } else {
+                console.error('userList or selectedUserId is not properly initialized.');
+            }
+        }
+
+        function findConversation(user1_2, user2_2) {
+            const flatChatList = chatList.flat();
+
+            const conversation = flatChatList.filter(message =>
+                (message.user1 === user1_2 && message.user2 === user2_2) ||
+                (message.user1 === user2_2 && message.user2 === user1_2)
+            );
+
+            finalChat = "";
+            conversation.forEach(message => {
+                if(message.user1 === user1_2){
+                    finalChat +=("me: "+message.message+"<br>");
+                } else{
+                    finalChat += user2_2+": "+message.message+"<br>";
+                }
+            });
+            return finalChat;
+        }
+
+        function renderChatMessages(user1, user2) {
+
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML='';
+
+            const storedConversation = findConversation(user1, user2);
+
+            if (storedConversation) {
+                chatMessages.innerHTML = storedConversation;
+            }
+        }
+
+
+        function sendMessage() {
+            const selectUserDropdown = document.getElementById('selectUser');
+            const selectedUserId = selectUserDropdown.value;
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            newMessage = {id : null, user1 : userName, user2 : selectedUserId, message : messageText};
+            chatList.push(newMessage);
+            renderChatMessages(userName, selectedUserId);
+            messageInput.value = '';
+        }
+
+
+        function accountDetails() {
+            const accountDetailsSection = document.getElementById('account-details');
+            accountDetailsSection.innerHTML = `
+                <h2>Account Details</h2>
+                <p>Username: ${userName}</p>
+                <button type="button" onclick="logOut()" id="style-button">Logout</button>
+                <h3>If you want to change your password</h3>
+                <label for="oldPassword">Old Password:</label>
+                <input type="password" id="oldPassword" placeholder="Enter old password">
+                <p></p>
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" placeholder="Enter new password">
+                <p></p>
+                <button type="button" onclick="changePassword()" id="style-button">Change password</button>
+            `;
+
+            showSection('account-details');
+        }
+
+        function viewAccountDetails() {
+            accountDetails();
+        }
+
+        function logOut(){
+            document.location.href = "index.html";
+        }
+
+        function changePassword() {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            if(oldPassword == userPass){
+                alert(`Password changed successfully!\nOld Password: ${oldPassword}\nNew Password: ${newPassword}`);
+            } else{
+                alert(`Old pass is wrong`);
+            }
+        }
+
+        function addNewProduct() {
+            var category = document.getElementById('category').value;
+            var name = document.getElementById('name').value;
+            var price = document.getElementById('price').value;
+            var description = document.getElementById('description').value;
+            var stock = document.getElementById('stock').value;
+
+            productItem = {category: category, name: name, price: price, description: description, stock: stock, postedBy: userName};
+            productList.push(productItem);
+
+            document.getElementById('category').value = 'tv';
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('stock').value = '';
+            document.getElementById('description').value = '';
+
+            window.alert("Item added successfully");
+        }
+        
+        function showPopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'block';
+        }
+
+        function showNotEnoughStockPopup(){
+            const popup = document.getElementById('not-enough-stock-popup');
+            popup.style.display = 'block';
+        }
+
+        function showPlaceOrderPopup() {
+            const popup = document.getElementById('place-order-popup');
+            popup.style.display = 'block';
+        }
+
+        function showReportProductPopup() {
+            const popup = document.getElementById('report-product-popup');
+            popup.style.display = 'block';
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'none';
+        }
+
+        function closeNotEnoughStockPopup(){
+            const popup = document.getElementById('not-enough-stock-popup');
+            popup.style.display = 'none';
+        }
+
+        function closePlaceOrderPopup() {
+            const popup = document.getElementById('place-order-popup');
+            popup.style.display = 'none';
+            cartData.splice(0,cartData.length);
+            renderCart();
+        }
+
+        function closeReportProcuctPopup() {
+            const popup = document.getElementById('report-product-popup');
+            popup.style.display = 'none';
+        }
+
+        renderUserListForChat();
+
+        document.getElementById('search-bar').addEventListener('input', renderProducts);
+        document.getElementById('category-dropdown').addEventListener('change', renderProducts);
+        document.querySelector('a[href="#account-details"]').addEventListener('click', viewAccountDetails);
+    </script>
+</body>
+
+</html>

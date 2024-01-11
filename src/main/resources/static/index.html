@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELECTRO-MAG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>ELECTRO-MAG</h1>
+    </header>
+
+    <div class="ribbon">
+        <a href="#" onclick="showLoginPopup()"><i class="fas fa-home"></i>Home</a>
+        <a href="#" onclick="showLoginPopup()"><i class="fas fa-box"></i>Products</a>
+        <a href="#" onclick="showLoginPopup()"><i class="fas fa-shopping-cart"></i>Cart</a>
+        <a href="#" onclick="showLoginPopup()"><i class="fas fa-user"></i>Account</a>
+    </div>
+
+    <div id="login-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeLoginPopup()">&times;</span>
+            <p>You need to login first!</p>
+        </div>
+    </div>
+
+    <div id="invalid-user-or-password-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeInvalidUserOrPasswordPopup()">&times;</span>
+            <p>Invalid user or password!</p>
+        </div>
+    </div>
+
+    <div id="create-account-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeCreateAccountPopup()">&times;</span>
+            <p>You must complete all of the fields!</p>
+        </div>
+    </div>
+
+    <div id="create-account-succ-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closeCreateAccountSuccPopup()">&times;</span>
+            <p>Your account has been succesfully created! Please log in!</p>
+        </div>
+    </div>
+
+    <div>
+        <form id="login-form">
+            <h1>Log in</h1>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <p></p>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <p></p>
+            <button type="button" onclick="login()" id="style-button">Login</button>
+            <button type="button" onclick="createNewAccount()" id="style-button">Create new account</button>
+        </form>
+    </div>
+
+    <div>
+        <form id="create-account-form" style="display: none;">
+            <h1>Create new account</h1>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+            <p></p>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <p></p>
+            <label for="new-password">Password:</label>
+            <input type="password" id="new-password" name="new-password" required>
+            <p></p>
+            <label for="type">Type:</label>
+            <select id="type" name="user-type">
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+            </select>
+            <p></p>
+            <button type="button" onclick="createAccount()" id="style-button">Create Account</button>
+        </form>
+    </div>
+
+    <script>
+        let users = [];
+        fetch('JSONs/user.json')
+            .then(response => response.json())
+            .then(data => {
+                users = data;
+                console.log(users);
+
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+
+        // users = [
+        //     { name: 'user1', username: '1', password: '1', type: 'admin' },
+        //     { name: 'user2', username: '2', password: '2', type: 'buyer' },
+        //     { name: 'user3', username: '3', password: '3', type: 'seller' },
+        //
+        // ];
+        function login() {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            const user = users.find(user => user.username === username && user.password === password);
+
+            let url;
+            url = '';
+            if (user) {
+                localStorage.setItem("username", user.username);
+                localStorage.setItem("password", user.password);
+                localStorage.setItem("userType", user.type);
+                // localStorage.setItem("users", users);
+
+                switch (user.type){
+                    case 'admin': url = 'admin.html'; break;
+                    case 'buyer': url = 'buyer.html'; break;
+                    case 'seller': url = 'buyer.html'; break;
+                }
+            } else {
+                showInvalidUserOrPasswordPopup();
+            }
+
+            document.location.href = url;
+        }
+
+        function createNewAccount() {
+            const loginForm = document.getElementById('login-form');
+            const createAccountContainer = document.getElementById('create-account-form');
+            loginForm.style.display = 'none';
+            createAccountContainer.style.display = 'block';
+        }
+
+        function createAccount(){
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const newPasswordInput = document.getElementById('new-password');
+            const typeInput = document.getElementById('type');
+
+            const name = nameInput.value;
+            const email = emailInput.value;
+            const newPassword = newPasswordInput.value;
+            const type = typeInput.value;
+
+            if (!name || !email || !newPassword) {
+                showCreateAccountPopup();
+            } else {
+                showCreateAccountSuccPopup();
+                const newUser = { name: name, username: email, password: newPassword, type: type };
+                users.push(newUser);
+                const loginForm = document.getElementById('login-form');
+                const createAccountContainer = document.getElementById('create-account-form');
+                loginForm.style.display = 'block';
+                createAccountContainer.style.display = 'none';
+            }
+        }
+
+        function showLoginPopup() {
+            const popup = document.getElementById('login-popup');
+            popup.style.display = 'block';
+        }
+
+        function closeLoginPopup() {
+            const popup = document.getElementById('login-popup');
+            popup.style.display = 'none';
+        }
+
+        function showInvalidUserOrPasswordPopup() {
+            const popup = document.getElementById('invalid-user-or-password-popup');
+            popup.style.display = 'block';
+        }
+
+        function closeInvalidUserOrPasswordPopup() {
+            const popup = document.getElementById('invalid-user-or-password-popup');
+            popup.style.display = 'none';
+        }
+
+        function showCreateAccountPopup() {
+            const createAccountPopup = document.getElementById('create-account-popup');
+            createAccountPopup.style.display = 'block';
+        }
+
+        function closeCreateAccountPopup() {
+            const createAccountPopup = document.getElementById('create-account-popup');
+            createAccountPopup.style.display = 'none';
+        }
+
+        function showCreateAccountSuccPopup() {
+            const createAccountPopup = document.getElementById('create-account-succ-popup');
+            createAccountPopup.style.display = 'block';
+        }
+
+        function closeCreateAccountSuccPopup() {
+            const createAccountPopup = document.getElementById('create-account-succ-popup');
+            createAccountPopup.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
